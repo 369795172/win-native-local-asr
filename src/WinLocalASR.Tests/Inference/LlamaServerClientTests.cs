@@ -193,15 +193,12 @@ public class LlamaServerClientTests
         Assert.True(client.IsReady);
 
         server.Stop();
-        // every relaunch dies on spawn (async so the client can subscribe to Exited first)
+        // every relaunch dies before its first health poll iteration — detected via HasExited,
+        // so the loop timing never depends on how fast a refused connect fails (OS-specific)
         spawner.Factory = _ =>
         {
             var process = new FakeProcess();
-            Task.Run(async () =>
-            {
-                await Task.Delay(10);
-                process.SimulateExit();
-            });
+            process.SimulateExit();
             return process;
         };
 
