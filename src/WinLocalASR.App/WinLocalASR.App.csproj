@@ -15,4 +15,8 @@
     <ProjectReference Include="..\WinLocalASR.Resources\WinLocalASR.Resources.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\*.ico" />
+  </ItemGroup>
+
 </Project>

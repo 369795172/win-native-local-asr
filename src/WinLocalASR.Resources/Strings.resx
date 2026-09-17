@@ -75,4 +75,40 @@
   <data name="Settings_ApplyFailed" xml:space="preserve">
     <value>Could not apply settings</value>
   </data>
+  <data name="Tray_Setup" xml:space="preserve">
+    <value>Setup…</value>
+  </data>
+  <data name="Tray_Settings" xml:space="preserve">
+    <value>Settings…</value>
+  </data>
+  <data name="Tray_CopyLastTranscript" xml:space="preserve">
+    <value>Copy last transcript</value>
+  </data>
+  <data name="Tray_RestartEngine" xml:space="preserve">
+    <value>Restart engine</value>
+  </data>
+  <data name="Tray_Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Tray_LoadingModel" xml:space="preserve">
+    <value>Loading model…</value>
+  </data>
+  <data name="Tray_Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Tray_Recording" xml:space="preserve">
+    <value>Recording…</value>
+  </data>
+  <data name="Tray_Transcribing" xml:space="preserve">
+    <value>Transcribing…</value>
+  </data>
+  <data name="Tray_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Tray_ModelLoaded" xml:space="preserve">
+    <value>Model loaded</value>
+  </data>
+  <data name="Tray_NotConfigured" xml:space="preserve">
+    <value>Not configured</value>
+  </data>
 </root>

@@ -56,6 +56,30 @@ public static class Strings
 
     public static string Settings_ApplyFailed => GetString();
 
+    public static string Tray_Setup => GetString();
+
+    public static string Tray_Settings => GetString();
+
+    public static string Tray_CopyLastTranscript => GetString();
+
+    public static string Tray_RestartEngine => GetString();
+
+    public static string Tray_Exit => GetString();
+
+    public static string Tray_LoadingModel => GetString();
+
+    public static string Tray_Ready => GetString();
+
+    public static string Tray_Recording => GetString();
+
+    public static string Tray_Transcribing => GetString();
+
+    public static string Tray_Error => GetString();
+
+    public static string Tray_ModelLoaded => GetString();
+
+    public static string Tray_NotConfigured => GetString();
+
     private static string GetString([System.Runtime.CompilerServices.CallerMemberName] string key = "") =>
         Manager.GetString(key) ?? key;
 }

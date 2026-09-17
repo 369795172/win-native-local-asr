@@ -75,4 +75,40 @@
   <data name="Settings_ApplyFailed" xml:space="preserve">
     <value>无法应用设置</value>
   </data>
+  <data name="Tray_Setup" xml:space="preserve">
+    <value>首次配置…</value>
+  </data>
+  <data name="Tray_Settings" xml:space="preserve">
+    <value>设置…</value>
+  </data>
+  <data name="Tray_CopyLastTranscript" xml:space="preserve">
+    <value>复制上次转写</value>
+  </data>
+  <data name="Tray_RestartEngine" xml:space="preserve">
+    <value>重启引擎</value>
+  </data>
+  <data name="Tray_Exit" xml:space="preserve">
+    <value>退出</value>
+  </data>
+  <data name="Tray_LoadingModel" xml:space="preserve">
+    <value>模型加载中…</value>
+  </data>
+  <data name="Tray_Ready" xml:space="preserve">
+    <value>就绪</value>
+  </data>
+  <data name="Tray_Recording" xml:space="preserve">
+    <value>录音中…</value>
+  </data>
+  <data name="Tray_Transcribing" xml:space="preserve">
+    <value>转写中…</value>
+  </data>
+  <data name="Tray_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Tray_ModelLoaded" xml:space="preserve">
+    <value>模型已加载</value>
+  </data>
+  <data name="Tray_NotConfigured" xml:space="preserve">
+    <value>未配置</value>
+  </data>
 </root>
