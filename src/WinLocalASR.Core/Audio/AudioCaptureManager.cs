@@ -40,6 +40,7 @@ public sealed class AudioCaptureManager : IDisposable
     private bool _isRecording;
     private IAudioCaptureSource? _source;
     private IPcmResampler? _resampler;
+    private bool _sourceIsFloat;
     private CancellationTokenSource? _maxDurationCts;
 
     public AudioCaptureManager(IAudioDeviceFactory? deviceFactory = null, IPcmResamplerFactory? resamplerFactory = null)
@@ -83,6 +84,7 @@ public sealed class AudioCaptureManager : IDisposable
             _pcm = new MemoryStream();
             _source = source;
             _resampler = resampler;
+            _sourceIsFloat = source.Format.Format == SampleFormat.Float32;
             _isRecording = true; // set before Start so first synchronous chunks are kept
         }
 
@@ -203,6 +205,7 @@ public sealed class AudioCaptureManager : IDisposable
     private void OnPcmChunkReceived(object? sender, ReadOnlyMemory<byte> chunk)
     {
         IPcmResampler? resampler;
+        bool sourceIsFloat;
         lock (_sync)
         {
             if (!_isRecording || chunk.Length == 0)
@@ -210,7 +213,16 @@ public sealed class AudioCaptureManager : IDisposable
                 return;
             }
             resampler = _resampler;
+            sourceIsFloat = _sourceIsFloat;
         }
+
+        // Level from the CAPTURE chunk (Swift parity: AudioCaptureManager.swift feeds
+        // the meter from incoming buffers). This stays live even when the resampler
+        // batches its output until stop (MediaFoundationPcmResampler).
+        float level = sourceIsFloat
+            ? AudioLevelMeter.ComputeLevelFloat(chunk.Span)
+            : AudioLevelMeter.ComputeLevel(chunk.Span);
+        OnAudioLevel?.Invoke(level); // raised outside the lock; handlers may call back in
 
         byte[] converted;
         try
@@ -226,9 +238,6 @@ public sealed class AudioCaptureManager : IDisposable
         {
             return;
         }
-
-        float level = AudioLevelMeter.ComputeLevel(converted);
-        OnAudioLevel?.Invoke(level); // raised outside the lock; handlers may call back in
 
         lock (_sync)
         {

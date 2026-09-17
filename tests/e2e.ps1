@@ -105,6 +105,7 @@ function Wait-For {
         $snapshot = Get-StatusSnapshot
         if ($null -eq $snapshot) {
             $lastErrorSeen = $true
+            $lastSnapshot = $null # a dead app must show as unreachable, not a stale phase
         } else {
             if ($lastErrorSeen) { $lastErrorSeen = $false }
             $lastSnapshot = $snapshot
@@ -216,6 +217,8 @@ try {
                 $final = $snapshot
                 break
             }
+        } else {
+            $lastSnapshot = $null # a dead app must show as unreachable, not a stale phase
         }
         if (((Get-Date).ToUniversalTime() - $lastHeartbeat).TotalSeconds -ge 5) {
             $state = if ($null -ne $lastSnapshot) { "phase=$($lastSnapshot.phase) hud=$($lastSnapshot.hudControlValue) transcript=[$($lastSnapshot.lastTranscript)]" } else { '/status unreachable' }
