@@ -114,4 +114,16 @@
   <data name="Tray_NotConfigured" xml:space="preserve">
     <value>Not configured</value>
   </data>
+  <data name="Hud_Recording" xml:space="preserve">
+    <value>Recording</value>
+  </data>
+  <data name="Hud_Transcribing" xml:space="preserve">
+    <value>Transcribing</value>
+  </data>
+  <data name="Hud_Copied" xml:space="preserve">
+    <value>Copied — ready to paste</value>
+  </data>
+  <data name="Hud_Cancelled" xml:space="preserve">
+    <value>Recording cancelled</value>
+  </data>
 </root>

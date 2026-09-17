@@ -1,3 +1,4 @@
+using WinLocalASR.Core.Hud;
 using WinLocalASR.Core.Shell;
 using WinLocalASR.Core.State;
 
@@ -73,7 +74,11 @@ internal sealed class WinFormsMessageLoop : IMessageLoop
 /// Task 8: the tray's construction also builds the global-hotkey shell (same UI
 /// thread, same lifetime — hotkeys degrade with the tray), and the factory exposes
 /// the settings hooks (re-register + registration status) resolved lazily because
-/// the settings factory outlives individual <see cref="CreateTray"/> calls.</summary>
+/// the settings factory outlives individual <see cref="CreateTray"/> calls.
+/// Task 9: the dictation HUD joins the same composition (Core presenter + WinForms
+/// form behind <see cref="WinHudShellFactory"/>, degrade-guarded via
+/// <see cref="HudComposition.CreateDegrading"/> — a HUD failure logs a warning and
+/// the tray/controller keep running).</summary>
 internal sealed class WinTrayShellFactory : ITrayShellFactory
 {
     private readonly IShellLog _log;
@@ -112,24 +117,36 @@ internal sealed class WinTrayShellFactory : ITrayShellFactory
             _log.Warn($"global hotkeys unavailable, continuing without them: {ex.Message}");
         }
 
-        return _hotkeys is null ? presenter : new TrayWithHotkeys(presenter, _hotkeys);
+        IDisposable? hud = HudComposition.CreateDegrading(new WinHudShellFactory(), controller, _log);
+
+        return new TrayWithHotkeys(presenter, _hotkeys, hud);
     }
 
-    /// <summary>Disposes the hotkey shell first: hotkeys unregister before the tray icon vanishes.</summary>
+    /// <summary>Disposes hotkeys first, then the HUD, then the tray icon vanishes last.</summary>
     private sealed class TrayWithHotkeys : IDisposable
     {
         private readonly TrayShellPresenter _presenter;
-        private readonly HotkeyShell _hotkeys;
+        private readonly HotkeyShell? _hotkeys;
+        private readonly IDisposable? _hud;
+        private bool _disposed;
 
-        public TrayWithHotkeys(TrayShellPresenter presenter, HotkeyShell hotkeys)
+        public TrayWithHotkeys(TrayShellPresenter presenter, HotkeyShell? hotkeys, IDisposable? hud)
         {
             _presenter = presenter;
             _hotkeys = hotkeys;
+            _hud = hud;
         }
 
         public void Dispose()
         {
-            _hotkeys.Dispose();
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _hotkeys?.Dispose();
+            _hud?.Dispose();
             _presenter.Dispose();
         }
     }

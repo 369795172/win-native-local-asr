@@ -8,6 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Feeds ApplicationConfiguration.Initialize()'s SetHighDpiMode call:
+         per-monitor-v2 so the HUD overlay scales and repositions correctly on
+         high-DPI displays (Task 9; retrofitting after the installer work is costlier). -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <ItemGroup>

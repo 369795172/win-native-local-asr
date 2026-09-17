@@ -114,4 +114,16 @@
   <data name="Tray_NotConfigured" xml:space="preserve">
     <value>未配置</value>
   </data>
+  <data name="Hud_Recording" xml:space="preserve">
+    <value>录音中</value>
+  </data>
+  <data name="Hud_Transcribing" xml:space="preserve">
+    <value>转写中</value>
+  </data>
+  <data name="Hud_Copied" xml:space="preserve">
+    <value>已复制，可粘贴</value>
+  </data>
+  <data name="Hud_Cancelled" xml:space="preserve">
+    <value>录音已取消</value>
+  </data>
 </root>

@@ -30,4 +30,11 @@ Platform-independent protocol verification of llama-server's Qwen3-ASR audio end
 
 Reference test machine (Win11 x64): install from Release assets → SmartScreen path → first setup (mirror fallback observed) → hotkey dictation → clipboard paste correctness → offline re-test (network disabled) → Esc / limit auto-stop / device switch → autostart → clean uninstall. Latency numbers recorded (10 s audio, soft target < 10 s wall clock).
 
+### Real-machine checklist
+
+Deferred visual/interaction items proven only on a real display (CI runners are headless at 96 dpi; results land here during Task 14 acceptance):
+
+- [ ] HUD at extreme DPI (150% / 200%): text not clipped, bars and timer readable.
+- [ ] HUD multi-monitor: overlay anchors to the primary screen's working area bottom-right (not the mouse's screen).
+
 **Status**: pending first Release.

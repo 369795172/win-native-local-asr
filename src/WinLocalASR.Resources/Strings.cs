@@ -7,7 +7,7 @@ namespace WinLocalASR.Resources;
 /// assembly), selected automatically via CurrentUICulture. Standard resx
 /// naming so single-file publish embeds the satellites via
 /// IncludeSatelliteAssembliesInSingleFile without special handling.
-/// Consumers: SettingsDialog today; the tray shell and HUD later.
+/// Consumers: SettingsDialog, the tray shell, and the HUD overlay.
 /// </summary>
 public static class Strings
 {
@@ -81,6 +81,14 @@ public static class Strings
     public static string Tray_ModelLoaded => GetString();
 
     public static string Tray_NotConfigured => GetString();
+
+    public static string Hud_Recording => GetString();
+
+    public static string Hud_Transcribing => GetString();
+
+    public static string Hud_Copied => GetString();
+
+    public static string Hud_Cancelled => GetString();
 
     private static string GetString([System.Runtime.CompilerServices.CallerMemberName] string key = "") =>
         Manager.GetString(key) ?? key;
