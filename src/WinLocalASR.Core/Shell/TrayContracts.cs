@@ -49,7 +49,24 @@ public enum TrayEngineStatus
 public sealed record TrayStatus(TrayPhaseStatus Phase, string? PhaseDetail, TrayEngineStatus Engine, string? EngineDetail);
 
 /// <summary>
-/// Shell logging seam. The tray app has no console; the real implementation writes a
+/// Live registration state of the user global hotkey (Task 8 hotkey manager).
+/// The settings presenter reads it to render a conflict; the tray balloons on the
+/// transition into Conflict.
+/// </summary>
+public enum HotkeyRegistrationStatus
+{
+    /// <summary>No registration attempt yet, or no hotkey manager wired (headless/tests).</summary>
+    Pending,
+
+    /// <summary>The user hotkey is registered and live.</summary>
+    Registered,
+
+    /// <summary>Registration failed — the combination is already held by another
+    /// program. The previously live combination (if any) is kept.</summary>
+    Conflict,
+}
+
+/// <summary>Shell logging seam. The tray app has no console; the real implementation writes a
 /// best-effort log file. The GUI-degrade hard requirement needs this: degradation must be
 /// observable, not silent.
 /// </summary>

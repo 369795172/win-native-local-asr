@@ -2,6 +2,7 @@ using WinLocalASR.Core.Audio;
 using WinLocalASR.Core.Hotkeys;
 using WinLocalASR.Core.Settings;
 using WinLocalASR.Core.SettingsUi;
+using WinLocalASR.Core.Shell;
 using Xunit;
 
 namespace WinLocalASR.Tests.SettingsUi;
@@ -273,6 +274,35 @@ public class SettingsDialogPresenterTests : IDisposable
 
         // Run key first: on failure nothing was saved, the old state stays consistent.
         Assert.False(new SettingsStore(_baseDir).Load().AutoStart);
+    }
+
+    [Fact]
+    public void Load_shows_hotkey_conflict_hint_when_registration_reports_conflict()
+    {
+        SettingsDialogPresenter presenter = new(
+            new SettingsStore(_baseDir),
+            _registry,
+            ExePath,
+            _devices.List,
+            _view,
+            () => _applyWithoutReloadCalls++,
+            hotkeyStatusProvider: () => HotkeyRegistrationStatus.Conflict);
+
+        presenter.Load();
+
+        Assert.Equal(HotkeyRegistrationStatus.Conflict, presenter.HotkeyRegistrationStatus);
+        Assert.Contains(SettingsHint.HotkeyConflict, _view.Hints.Select(h => h.Hint));
+    }
+
+    [Fact]
+    public void Hotkey_registration_status_is_pending_without_a_provider()
+    {
+        SettingsDialogPresenter presenter = NewPresenter();
+
+        presenter.Load();
+
+        Assert.Equal(HotkeyRegistrationStatus.Pending, presenter.HotkeyRegistrationStatus);
+        Assert.DoesNotContain(SettingsHint.HotkeyConflict, _view.Hints.Select(h => h.Hint));
     }
 
     public void Dispose() => DeleteDir(_baseDir);

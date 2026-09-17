@@ -21,6 +21,10 @@ public enum SettingsHint
     /// <summary>The stored hotkey string could not be parsed; the default was restored.</summary>
     HotkeyInvalidReset,
 
+    /// <summary>The live global-hotkey registration reports a conflict — the current
+    /// combination is held by another program (Task 8 status surface).</summary>
+    HotkeyConflict,
+
     /// <summary>The requested recording limit was clamped to the 10-120 s guardrail.</summary>
     RecordingLimitClamped,
 

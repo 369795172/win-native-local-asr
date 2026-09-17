@@ -44,6 +44,11 @@ Offline voice dictation for Windows 10+ (x64): a system tray app where the user 
 - Installer does not bundle model weights (setup downloads ~2.5 GB; self-contained installer size ~50–70 MB accepted)
 - No Whisper substitution for Qwen3-ASR
 
+## Known tradeoffs
+
+- **Esc is globally swallowed while recording**: during an active recording, the app registers a system-wide bare-Esc hotkey, so pressing Esc in ANY application (not just WinLocalASR) cancels the recording. Outside recording, Esc is never registered and reaches other applications normally. This replicates the macOS original's behavior and is accepted; the Task 14 real-machine checklist verifies both sides (Esc in another app cancels the recording; Esc behaves normally when idle).
+- **Recording limit hard cap at 120 s**: see `docs/rfc.md` §Parity (llama.cpp #21847 guardrail).
+
 ## Success criteria
 
 1. A fresh Windows 10+ x64 machine: install → one-click setup → hotkey dictation → paste correct text; network disabled mid-session does not break dictation.

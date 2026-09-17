@@ -75,6 +75,9 @@
   <data name="Settings_ApplyFailed" xml:space="preserve">
     <value>无法应用设置</value>
   </data>
+  <data name="Settings_HotkeyConflict" xml:space="preserve">
+    <value>该热键已被其他程序占用</value>
+  </data>
   <data name="Tray_Setup" xml:space="preserve">
     <value>首次配置…</value>
   </data>

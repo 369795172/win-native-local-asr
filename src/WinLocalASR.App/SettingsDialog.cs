@@ -2,6 +2,7 @@ using WinLocalASR.Core.Audio;
 using WinLocalASR.Core.Hotkeys;
 using WinLocalASR.Core.Settings;
 using WinLocalASR.Core.SettingsUi;
+using WinLocalASR.Core.Shell;
 using WinLocalASR.Resources;
 
 namespace WinLocalASR.App;
@@ -36,7 +37,8 @@ internal sealed class SettingsDialog : Form, ISettingsDialogView
         SettingsStore store,
         IRegistryKeyFactory registryFactory,
         string exePath,
-        Action? applyWithoutReload)
+        Action? applyWithoutReload,
+        Func<HotkeyRegistrationStatus>? hotkeyStatusProvider = null)
     {
         Text = Strings.Settings_Title;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -107,7 +109,7 @@ internal sealed class SettingsDialog : Form, ISettingsDialogView
 
         // Before the event wiring: the ctor only stores references (view calls start at Load()).
         _presenter = new SettingsDialogPresenter(
-            store, registryFactory, exePath, ListDevices, this, applyWithoutReload);
+            store, registryFactory, exePath, ListDevices, this, applyWithoutReload, hotkeyStatusProvider);
 
         _hotkeyBox.GotFocus += OnHotkeyGotFocus;
         _hotkeyBox.MouseClick += OnHotkeyMouseClick;
@@ -245,9 +247,16 @@ internal sealed class SettingsDialog : Form, ISettingsDialogView
     {
         string text = HintText(hint);
         _hintLabel.Text = detail is null ? text : $"{text}: {detail}";
+        _hintLabel.ForeColor = hint == SettingsHint.HotkeyConflict
+            ? System.Drawing.Color.Firebrick
+            : System.Drawing.SystemColors.ControlText;
     }
 
-    void ISettingsDialogView.ClearHint() => _hintLabel.Text = "";
+    void ISettingsDialogView.ClearHint()
+    {
+        _hintLabel.Text = "";
+        _hintLabel.ForeColor = System.Drawing.SystemColors.ControlText;
+    }
 
     private static string HintText(SettingsHint hint) => hint switch
     {
@@ -255,6 +264,7 @@ internal sealed class SettingsDialog : Form, ISettingsDialogView
         SettingsHint.HotkeyCaptureCancelled => Strings.Settings_HotkeyCaptureCancelled,
         SettingsHint.HotkeyNeedsModifier => Strings.Settings_HotkeyNeedsModifier,
         SettingsHint.HotkeyInvalidReset => Strings.Settings_HotkeyInvalidReset,
+        SettingsHint.HotkeyConflict => Strings.Settings_HotkeyConflict,
         SettingsHint.RecordingLimitClamped => Strings.Settings_LimitClamped,
         SettingsHint.Applied => Strings.Settings_Applied,
         _ => Strings.Settings_ApplyFailed,

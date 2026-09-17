@@ -49,17 +49,40 @@ internal sealed class WinSetupDialogFactory : ISetupDialogFactory
 /// <summary>
 /// Opens the Task 11 settings dialog bound to the controller: Apply routes through
 /// <see cref="AppController.ApplySettingsWithoutReload"/> so hotwords/limit/device changes
-/// apply without a model reload.
+/// apply without a model reload, then (when the Task 8 hotkey shell is up) re-registers
+/// the user hotkey from the just-persisted settings string. The hotkey provider is
+/// resolved at Open time because the manager is built with the tray, after this factory.
 /// </summary>
 internal sealed class WinSettingsDialogFactory : ISettingsDialogFactory
 {
+    private readonly Func<HotkeyShell?>? _hotkeys;
+
+    public WinSettingsDialogFactory(Func<HotkeyShell?>? hotkeys = null) => _hotkeys = hotkeys;
+
     public void Open(AppController controller)
     {
+        HotkeyShell? hotkeys = _hotkeys?.Invoke();
+        if (hotkeys is null)
+        {
+            SettingsDialog plain = new(
+                new SettingsStore(),
+                new RegistryKeyFactory(),
+                Environment.ProcessPath ?? "",
+                controller.ApplySettingsWithoutReload);
+            plain.Show();
+            return;
+        }
+
         SettingsDialog dialog = new(
             new SettingsStore(),
             new RegistryKeyFactory(),
             Environment.ProcessPath ?? "",
-            controller.ApplySettingsWithoutReload);
+            () =>
+            {
+                controller.ApplySettingsWithoutReload();
+                hotkeys.ApplyHotkeyFromSettings();
+            },
+            () => hotkeys.Status);
         dialog.Show();
     }
 }

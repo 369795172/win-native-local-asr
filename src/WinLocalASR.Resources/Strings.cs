@@ -28,6 +28,8 @@ public static class Strings
 
     public static string Settings_HotkeyInvalidReset => GetString();
 
+    public static string Settings_HotkeyConflict => GetString();
+
     public static string Settings_DeviceLabel => GetString();
 
     public static string Settings_SystemDefaultDevice => GetString();

@@ -22,13 +22,14 @@ internal static class Program
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             log.Warn($"unhandled exception: {(e.ExceptionObject as Exception)?.Message ?? e.ExceptionObject}");
 
+        WinTrayShellFactory trayFactory = new(log);
         AppBootstrapper bootstrapper = new(new AppBootstrapperDependencies
         {
             MutexFactory = new SystemMutexFactory(),
             ServiceGraphFactory = new DefaultAppServiceGraphFactory(log),
-            TrayShellFactory = new WinTrayShellFactory(log),
+            TrayShellFactory = trayFactory,
             SetupDialogFactory = new WinSetupDialogFactory(log),
-            SettingsDialogFactory = new WinSettingsDialogFactory(),
+            SettingsDialogFactory = new WinSettingsDialogFactory(() => trayFactory.Hotkeys),
             MessageLoop = new WinFormsMessageLoop(),
             Log = log,
         });

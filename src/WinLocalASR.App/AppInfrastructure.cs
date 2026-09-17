@@ -69,23 +69,68 @@ internal sealed class WinFormsMessageLoop : IMessageLoop
     }
 }
 
-/// <summary>Composes the WinForms tray: view + Core presenter, wired to the controller.</summary>
+/// <summary>Composes the WinForms tray: view + Core presenter, wired to the controller.
+/// Task 8: the tray's construction also builds the global-hotkey shell (same UI
+/// thread, same lifetime — hotkeys degrade with the tray), and the factory exposes
+/// the settings hooks (re-register + registration status) resolved lazily because
+/// the settings factory outlives individual <see cref="CreateTray"/> calls.</summary>
 internal sealed class WinTrayShellFactory : ITrayShellFactory
 {
     private readonly IShellLog _log;
 
+    private HotkeyShell? _hotkeys;
+
     public WinTrayShellFactory(IShellLog log) => _log = log;
+
+    /// <summary>Settings-dialog hook, resolved at Open time (after CreateTray ran).
+    /// Null when the hotkey shell failed to build — the dialog then applies without it.</summary>
+    public HotkeyShell? Hotkeys => _hotkeys;
 
     public IDisposable CreateTray(
         AppController controller,
         ISetupDialogFactory setupDialogFactory,
         ISettingsDialogFactory settingsDialogFactory,
-        Action requestExit) =>
-        new TrayShellPresenter(
+        Action requestExit)
+    {
+        TrayShell tray = new(_log);
+        TrayShellPresenter presenter = new(
             controller,
-            new TrayShell(_log),
+            tray,
             setupDialogFactory,
             settingsDialogFactory,
             requestExit,
             _log);
+
+        try
+        {
+            _hotkeys = HotkeyShell.Create(controller, tray, _log);
+        }
+        catch (Exception ex)
+        {
+            // Same degrade rule as the tray itself: a hotkey failure (never thrown by
+            // the manager, but e.g. window creation) must not take the shell down.
+            _log.Warn($"global hotkeys unavailable, continuing without them: {ex.Message}");
+        }
+
+        return _hotkeys is null ? presenter : new TrayWithHotkeys(presenter, _hotkeys);
+    }
+
+    /// <summary>Disposes the hotkey shell first: hotkeys unregister before the tray icon vanishes.</summary>
+    private sealed class TrayWithHotkeys : IDisposable
+    {
+        private readonly TrayShellPresenter _presenter;
+        private readonly HotkeyShell _hotkeys;
+
+        public TrayWithHotkeys(TrayShellPresenter presenter, HotkeyShell hotkeys)
+        {
+            _presenter = presenter;
+            _hotkeys = hotkeys;
+        }
+
+        public void Dispose()
+        {
+            _hotkeys.Dispose();
+            _presenter.Dispose();
+        }
+    }
 }

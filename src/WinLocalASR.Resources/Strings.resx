@@ -75,6 +75,9 @@
   <data name="Settings_ApplyFailed" xml:space="preserve">
     <value>Could not apply settings</value>
   </data>
+  <data name="Settings_HotkeyConflict" xml:space="preserve">
+    <value>This hotkey is already in use by another program</value>
+  </data>
   <data name="Tray_Setup" xml:space="preserve">
     <value>Setup…</value>
   </data>

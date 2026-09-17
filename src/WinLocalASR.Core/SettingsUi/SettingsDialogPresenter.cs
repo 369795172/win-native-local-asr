@@ -1,6 +1,7 @@
 using WinLocalASR.Core.Audio;
 using WinLocalASR.Core.Hotkeys;
 using WinLocalASR.Core.Settings;
+using WinLocalASR.Core.Shell;
 
 namespace WinLocalASR.Core.SettingsUi;
 
@@ -26,6 +27,7 @@ public sealed class SettingsDialogPresenter
     private readonly string _exePath;
     private readonly Func<IReadOnlyList<AudioDeviceInfo>> _deviceLister;
     private readonly Action? _applyWithoutReload;
+    private readonly Func<HotkeyRegistrationStatus>? _hotkeyStatusProvider;
     private readonly ISettingsDialogView _view;
 
     private string _hotkey = AppSettings.DefaultHotkey;
@@ -41,7 +43,8 @@ public sealed class SettingsDialogPresenter
         string exePath,
         Func<IReadOnlyList<AudioDeviceInfo>> deviceLister,
         ISettingsDialogView view,
-        Action? applyWithoutReload = null)
+        Action? applyWithoutReload = null,
+        Func<HotkeyRegistrationStatus>? hotkeyStatusProvider = null)
     {
         _store = store;
         _registryFactory = registryFactory;
@@ -49,6 +52,7 @@ public sealed class SettingsDialogPresenter
         _deviceLister = deviceLister;
         _view = view;
         _applyWithoutReload = applyWithoutReload;
+        _hotkeyStatusProvider = hotkeyStatusProvider;
     }
 
     public bool IsCapturingHotkey => _capturingHotkey;
@@ -63,6 +67,11 @@ public sealed class SettingsDialogPresenter
     public int RecordingLimitSeconds => _recordingLimitSeconds;
 
     public bool AutoStart => _autoStart;
+
+    /// <summary>Live user-hotkey registration state (Task 8). No provider wired →
+    /// Pending (tests / hotkey shell degraded).</summary>
+    public HotkeyRegistrationStatus HotkeyRegistrationStatus =>
+        _hotkeyStatusProvider?.Invoke() ?? HotkeyRegistrationStatus.Pending;
 
     /// <summary>Populates every view field from SettingsStore + the device list.</summary>
     public void Load()
@@ -90,6 +99,12 @@ public sealed class SettingsDialogPresenter
         _view.SetRecordingLimit(_recordingLimitSeconds);
         _view.SetAutoStart(_autoStart);
         RefreshDevices();
+
+        if (HotkeyRegistrationStatus == HotkeyRegistrationStatus.Conflict)
+        {
+            // The conflict may originate at startup, not in this dialog session.
+            _view.ShowHint(SettingsHint.HotkeyConflict);
+        }
     }
 
     /// <summary>Re-enumerates input devices; a stored selection that no longer
