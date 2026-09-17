@@ -1,12 +1,17 @@
 # Self-contained bundle verification (Task 13, build-chain step 3 -- QA-).
 #
 # Method (documented per the task contract): with PublishSingleFile=true the .NET
-# runtime ships INSIDE the exe -- the single-file bundle header lists every embedded
-# file name as plain text. We therefore verify:
+# runtime ships INSIDE the exe. We therefore verify:
 #   1. the publish directory holds no loose DLLs (a framework-dependent publish
 #      would scatter System.*.dll / coreclr.dll next to the exe);
-#   2. the exe bytes contain the runtime file-name markers coreclr.dll,
-#      hostpolicy.dll and System.Private.CoreLib.dll (runtime bundled in-file);
+#   2. the exe bytes contain runtime markers: System.Private.CoreLib.dll (managed
+#      core runtime assembly -- bundle-manifest ASCII entry; never present in a
+#      framework-dependent payload) and the native runtime components
+#      coreclr.dll + hostpolicy.dll. NOTE from the first CI iteration: in a .NET 10
+#      single-file superhost the managed entries appear as plain-ASCII bundle
+#      manifest strings, while the native runtime components appear only as
+#      UTF-16LE strings inside the superhost -- so both encodings are searched
+#      (UTF-16LE decoded from even and odd byte offsets to cover alignment);
 #   3. the exe is comfortably larger than 50 MB (self-contained floor; a
 #      framework-dependent apphost is a few MB).
 # Functional proof comes from the subsequent e2e step, which runs this exact exe.
@@ -46,11 +51,27 @@ if ($loose.Count -gt 0) {
 # ---- 2. embedded runtime markers ------------------------------------------------------
 $bytes = [System.IO.File]::ReadAllBytes($AppExe)
 $text = [System.Text.Encoding]::ASCII.GetString($bytes)
-foreach ($marker in @('coreclr.dll', 'hostpolicy.dll', 'System.Private.CoreLib.dll')) {
-    if ($text.Contains($marker)) {
-        Write-Host "[PASS] bundle contains embedded runtime marker: $marker"
+
+# Managed core runtime assembly: ASCII bundle-manifest entry.
+if ($text.Contains('System.Private.CoreLib.dll')) {
+    Write-Host '[PASS] bundle contains embedded runtime marker (ASCII manifest): System.Private.CoreLib.dll'
+} else {
+    Write-Host '[FAIL] bundle lacks ASCII runtime marker: System.Private.CoreLib.dll (runtime NOT embedded?)'
+    $failed = $true
+}
+
+# Native runtime components: UTF-16LE strings inside the superhost (see header).
+# Decode from both even and odd byte offsets so either alignment is found.
+$lenEven = $bytes.Length - ($bytes.Length % 2)
+$textEven = [System.Text.Encoding]::Unicode.GetString($bytes, 0, $lenEven)
+$lenOddBytes = $bytes.Length - 1
+$lenOdd = $lenOddBytes - ($lenOddBytes % 2)
+$textOdd = [System.Text.Encoding]::Unicode.GetString($bytes, 1, $lenOdd)
+foreach ($marker in @('coreclr.dll', 'hostpolicy.dll')) {
+    if ($textEven.Contains($marker) -or $textOdd.Contains($marker)) {
+        Write-Host "[PASS] bundle contains embedded runtime marker (UTF-16LE): $marker"
     } else {
-        Write-Host "[FAIL] bundle lacks runtime marker: $marker (runtime NOT embedded?)"
+        Write-Host "[FAIL] bundle lacks UTF-16LE runtime marker: $marker (runtime NOT embedded?)"
         $failed = $true
     }
 }
