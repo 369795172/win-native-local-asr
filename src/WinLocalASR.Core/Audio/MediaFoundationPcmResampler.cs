@@ -36,6 +36,9 @@ internal sealed class MediaFoundationPcmResampler : IPcmResampler
         {
             BufferDuration = TimeSpan.FromSeconds(20),
             DiscardOnBufferOverflow = true,
+            // ReadFully (default true) zero-pads empty reads, which would make the
+            // resampler emit an endless stream of silence and hang the drain loop.
+            ReadFully = false,
         };
         _resampler = new MediaFoundationResampler(
             _sourceBuffer,
