@@ -361,44 +361,49 @@ public sealed class SetupRunner
         }
 
         await using Stream source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        await using var target = new FileStream(
-            partPath,
-            resumed ? FileMode.Append : FileMode.Create,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 81920,
-            useAsync: true);
 
-        byte[] buffer = new byte[81920];
-        long received = 0;
-        int? lastPercent = null;
-        while (true)
+        long finalLength;
+        await using (var target = new FileStream(
+                   partPath,
+                   resumed ? FileMode.Append : FileMode.Create,
+                   FileAccess.Write,
+                   FileShare.None,
+                   bufferSize: 81920,
+                   useAsync: true))
         {
-            int read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false);
-            if (read == 0)
+            byte[] buffer = new byte[81920];
+            long received = 0;
+            int? lastPercent = null;
+            while (true)
             {
-                break;
-            }
-
-            await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
-            received += read;
-            if (total > 0)
-            {
-                int percent = (int)(100 * (startLength + received) / total);
-                if (percent != lastPercent)
+                int read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false);
+                if (read == 0)
                 {
-                    lastPercent = percent;
-                    Report(progress, step, stepName, $"{label}: {percent}%", label, percent);
+                    break;
+                }
+
+                await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+                received += read;
+                if (total > 0)
+                {
+                    int percent = (int)(100 * (startLength + received) / total);
+                    if (percent != lastPercent)
+                    {
+                        lastPercent = percent;
+                        Report(progress, step, stepName, $"{label}: {percent}%", label, percent);
+                    }
                 }
             }
+
+            finalLength = startLength + received;
         }
 
-        long finalLength = startLength + received;
         if (total > 0 && finalLength != total)
         {
             throw new HttpRequestException($"Incomplete download for {url}: got {finalLength:N0} of {total:N0} bytes.");
         }
 
+        // The .part handle is closed above: Windows File.Move refuses open files (Unix allows it).
         File.Move(partPath, finalPath, overwrite: true);
         Report(progress, step, stepName,
             $"{label}: download complete ({finalLength:N0} bytes{(resumed ? ", resumed from .part" : "")}).");
