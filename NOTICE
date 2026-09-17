@@ -1,0 +1,12 @@
+WinLocalASR
+Copyright 2026 WinLocalASR project contributors
+
+This product is a Windows port of grapeot/mac-native-local-asr
+(https://github.com/grapeot/mac-native-local-asr), which is licensed under the
+MIT License. Its product behavior, setup flow, and documentation structure are
+derived from that project.
+
+This product includes software developed by the llama.cpp project
+(https://github.com/ggml-org/llama.cpp, MIT License) and the Qwen3-ASR model
+family by the Qwen Team (Alibaba Cloud), distributed as GGUF files via
+Hugging Face.
