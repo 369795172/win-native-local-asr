@@ -81,7 +81,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   FlagDir: string;
 begin
-  if (CurStep = sbPostInstall) and AutostartRequested() then
+  if (CurStep = ssPostInstall) and AutostartRequested() then
   begin
     // Derived half: HKCU Run value. Bare exe path on purpose -- the app's own
     // AutoStartHelper writes exactly this form, and the app-side merge only
