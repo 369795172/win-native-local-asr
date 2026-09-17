@@ -49,7 +49,7 @@ dotnet test src/WinLocalASR.sln
 1. **WinForms tray shell + platform-neutral Core** — `NotifyIcon` shell keeps the app tiny; all logic lives in Core with injectable interfaces (timer, clock, dispatcher, audio device factory, HTTP handler) so the state machine is unit-testable without Windows.
 2. **Toggle hotkey only** — default `Ctrl+Shift+Space`; `Esc` is registered only while recording (mirrors the macOS `setCancelShortcutActive` semantics). No VAD, no push-to-talk, no streaming.
 3. **NAudio capture → 24 kHz Int16 mono WAV** — WasapiCapture shared mode, MediaFoundation resampler, one WAV file per utterance.
-4. **llama.cpp inference** — `llama-server.exe` stays resident; audio is POSTed per utterance. Qwen3-ASR-1.7B Q4_K_M is the default quant. Exact wire contract lives in `docs/rfc.md` §Inference Contract (spike-derived; treat it as the source of truth for the client).
+4. **llama.cpp inference** — `llama-server.exe` stays resident; audio is POSTed per utterance. Qwen3-ASR-1.7B Q8_0 (official pair) is the default quant. Exact wire contract lives in `docs/rfc.md` §Inference Contract (spike-derived; treat it as the source of truth for the client).
 5. **Clipboard-only output** — text goes to the clipboard; the user pastes with `Ctrl+V`. No simulated keystrokes.
 6. **Settings SSOT** — `settings.json` is the single source of truth (HKCU Run key is derived); installs never edit JSON directly.
 7. **Recording limit capped at 120 s** — llama.cpp issue #21847 affects >2 min audio; the cap is a deliberate deviation from the macOS original, recorded in the Parity table.

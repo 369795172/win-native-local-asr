@@ -9,7 +9,7 @@ WinLocalASR 是一款 Windows 10+（x64）离线语音听写工具。按下全�
 - Lives in the system tray — no window, no taskbar clutter（常驻系统托盘）
 - Global hotkey (default: `Ctrl+Shift+Space`) toggles recording; `Esc` cancels mid-recording（全局热键切换录音，录音中 Esc 取消）
 - 24 kHz mono capture with a live level meter（24 kHz 单声道采集 + 实时电平表）
-- Local transcription via Qwen3-ASR-1.7B (GGUF, Q4_K_M) on llama.cpp — CPU (AVX2) is enough（本地 llama.cpp 推理，CPU 即可运行）
+- Local transcription via Qwen3-ASR-1.7B (GGUF, Q8_0) on llama.cpp — CPU (AVX2) is enough（本地 llama.cpp 推理，CPU 即可运行）
 - Transcript goes to the clipboard — paste with `Ctrl+V` anywhere（转写结果进剪贴板，随处粘贴）
 - Bilingual UI: English + 简体中文, following system locale（界面双语，跟随系统语言）
 
@@ -23,7 +23,7 @@ Releases are not published yet. Once the first installer ships:
 
 1. Download `WinLocalASR-Setup-x64.exe` from [Releases](https://github.com/369795172/win-native-local-asr/releases).
 2. The binary is not code-signed, so Windows SmartScreen may warn. Click **More info → Run anyway**（未购买代码签名证书，SmartScreen 提示时选择「更多信息 → 仍要运行」）。
-3. First launch runs a guided setup that downloads the speech model (~1.9 GB; a China-friendly mirror is used automatically when needed)（首次启动引导下载模型，国内网络自动走镜像）。
+3. First launch runs a guided setup that downloads the speech model (~2.5 GB; a China-friendly mirror is used automatically when needed)（首次启动引导下载模型，国内网络自动走镜像）。
 4. Grant microphone permission when prompted.
 
 ## Requirements

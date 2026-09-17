@@ -22,7 +22,7 @@ Offline voice dictation for Windows 10+ (x64): a system tray app where the user 
 - Global toggle hotkey (default `Ctrl+Shift+Space`); `Esc` cancels mid-recording (registered only while recording)
 - Recording auto-stop at the configured limit (default 120 s, range 10–120 s)
 - 24 kHz mono Int16 capture with live level meter; selectable input device
-- Offline transcription via a resident llama.cpp server (Qwen3-ASR-1.7B, Q4_K_M default)
+- Offline transcription via a resident llama.cpp server (Qwen3-ASR-1.7B, Q8_0 default)
 - Hotwords / context prompt passed to the recognizer
 - Clipboard-only output (paste with `Ctrl+V`; no simulated keystrokes)
 - Six-step first-run setup: directories → engine binary → model download (with China-friendly mirrors and resume) → checksums → manifest + configured flag → app initialization
@@ -41,7 +41,7 @@ Offline voice dictation for Windows 10+ (x64): a system tray app where the user 
 - No Win7/8, x86, or ARM64 support (Win10+ x64 only)
 - No code-signing certificate (README documents the SmartScreen "More info → Run anyway" path)
 - No winget/store distribution (future option)
-- Installer does not bundle model weights (setup downloads ~1.9 GB; self-contained installer size ~50–70 MB accepted)
+- Installer does not bundle model weights (setup downloads ~2.5 GB; self-contained installer size ~50–70 MB accepted)
 - No Whisper substitution for Qwen3-ASR
 
 ## Success criteria

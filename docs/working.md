@@ -4,6 +4,12 @@ Changelog and lessons learned. Newest first. Every meaningful change gets an ent
 
 ## Changelog
 
+### 2026-09-17 — inference contract backfill (Task 1)
+
+- `docs: backfill inference contract from spike`: filled `docs/rfc.md` §Inference Contract from the macOS spike — server command line (`llama-server -m <main.gguf> --mmproj <mmproj.gguf> --host 127.0.0.1 --port <P>`), multipart field table for `POST /v1/audio/transcriptions` (`file` required; `model`/`prompt`/`temperature` optional; `response_format` must be `json` or omitted), non-OpenAI response shape with verbatim EN/ZH samples and the `^language\s+[^<]*<asr_text>` artifact-strip rule, `GET /health` ready-poll, `/shutdown` absent → Stop() = graceful attempt then process kill after 2 s, model pins + SHA256, quant ruling (no official Q4_K_M exists → Q8_0 pair ~2.5 GB supersedes the ~1.9 GB estimate), validation context (brew llama.cpp 0.4.1 `b10964-b29c606e2`; Windows pin = any release tagged after the 2026-04-12 qwen3-asr merge), 120 s cap kept as conservative guardrail (#21847 NOT reproduced on b10964), and the chat-completions base64 route documented as fallback only.
+- Committed `tests/assets/spike-sample.wav` (1.4 s EN) + `tests/assets/spike-sample-10s.wav` (8.7 s EN) as binary-exact spike copies — future fixtures for Task 4 artifact-stripping unit tests and the Task 13 Windows inference smoke job.
+- Corrected all stale Q4_K_M / ~1.9 GB references repo-wide (README, AGENTS.md decision 4, prd.md, rfc.md anchor decisions / Parity Setup row / D3) to the Q8_0 / ~2.5 GB ruling; Parity rows updated for the honest #21847 finding and the now-known `prompt` hotword field.
+
 ### 2026-09-17 — bootstrap
 
 - `chore: bootstrap win-native-local-asr` (cccf0c9): repository skeleton — `windows.yml` CI (checkout → setup-dotnet 10.x → build + test on windows-latest), MIT LICENSE (project contributors), NOTICE crediting grapeot/mac-native-local-asr, bilingual README (EN + zh-CN, SmartScreen install guidance placeholder, Credits), AGENTS.md, `docs/{prd,rfc,working,test}.md`, and the solution: Core (multi-target `net10.0;net10.0-windows` class library), App (`net10.0-windows` WinForms with `EnableWindowsTargeting`), Tests (xunit + smoke test).
