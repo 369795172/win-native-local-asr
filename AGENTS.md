@@ -14,15 +14,20 @@ A Windows 10+ (x64) system tray app for offline voice-to-text dictation, using Q
 
 - `src/` — Solution and project sources
   - `src/WinLocalASR.sln` — solution
-  - `src/WinLocalASR.Core/` — platform-neutral class library (multi-targets `net10.0;net10.0-windows`): audio pipeline, inference client, settings, state machine, setup
-  - `src/WinLocalASR.App/` — WinForms shell (`net10.0-windows`): tray, HUD, hotkeys, dialogs
-  - `src/WinLocalASR.Tests/` — xunit tests
+  - `src/WinLocalASR.Core/` — platform-neutral class library (multi-targets `net10.0;net10.0-windows`), additive subdirectories: `Audio/` (capture, WAV, level), `Inference/` (llama-server client), `Settings/` (store + autostart SSOT), `Output/` (clipboard), `Versions/` (manifest), `State/` (AppController state machine), `Setup/` (six-step runner + presenter), `Hotkeys/` (manager + HotkeyString), `SettingsUi/`, `Shell/` (bootstrapper, tray presenter, single instance), `Hud/`, `Control/` (ControlServer + fake bridge)
+  - `src/WinLocalASR.App/` — WinForms shell (`net10.0-windows`): tray, HUD form, hotkey message window, dialogs
+  - `src/WinLocalASR.Resources/` — resx string tables (English neutral + zh-Hans satellite)
+  - `src/WinLocalASR.Tests/` — xunit tests (`net10.0`; Windows-only cases are platform-guarded)
 - `docs/` — Product and engineering docs
   - `prd.md` — product scope, non-goals, success criteria
   - `rfc.md` — architecture, inference contract, Mac/Win parity table
   - `working.md` — changelog and lessons learned
   - `test.md` — layered verification strategy and results
-- `.github/workflows/windows.yml` — Windows CI (build + test; extended in later milestones)
+- `tests/` — e2e + CI drivers: `e2e.ps1` (ControlServer-driven end-to-end), `inference-smoke.ps1` (real-inference tag job), `install-regression.ps1` (silent install/uninstall), `verify-selfcontained.ps1`, `verify-llama-binaries.ps1`, `assets/` (committed spike WAV fixtures)
+- `packaging/` — `installer.iss` (Inno Setup; fixed AppId — never regenerate) + `WinLocalASR.bat` (portable launcher)
+- `versions.json` — pin manifest template (llama.cpp tag/asset/sha256, GGUF pair pins, mirror URLs); setup writes the installed copy
+- `tools/generate_tray_icons.py` — regenerates the four embedded tray ICOs
+- `.github/workflows/windows.yml` — Windows CI (full three-job delivery pipeline: build+test+e2e+installer on main; real-inference smoke on dispatch/tags; release on tags)
 
 ## Git Rules
 
@@ -43,6 +48,14 @@ dotnet test src/WinLocalASR.sln
 - The App project builds on non-Windows hosts via `<EnableWindowsTargeting>true</EnableWindowsTargeting>`; do not remove it.
 - Core multi-targets `net10.0;net10.0-windows` on purpose: Windows-only asset gaps (Wasapi/MediaFoundation surface) must surface at compile time, while pure-logic tests still run cross-platform.
 - Windows-only runtime tests use platform guards and only execute on windows-latest CI or a real Windows machine.
+- End-to-end (requires a published Windows exe — normally CI's job):
+
+```powershell
+dotnet publish src/WinLocalASR.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeSatelliteAssembliesInSingleFile=true -o staging/app
+tests/e2e.ps1 -ExePath staging/app/WinLocalASR.App.exe
+```
+
+- Installer: `ISCC packaging/installer.iss` (version overridable via `/DMyAppVersion=`). Release builds are produced by the CI pipeline only — do not hand-publish releases.
 
 ## Key Architecture Decisions
 
