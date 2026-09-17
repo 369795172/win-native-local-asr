@@ -1,14 +1,34 @@
 name: windows
 
+# Delivery pipeline (Task 13):
+#   build-chain -- build + full test suite (incl. Windows-only) + self-contained
+#                   single-file publish + self-contained verification (QA-) + e2e
+#                   against the publish output + pinned llama.cpp binary
+#                   verification + Inno Setup installer + portable zip + silent
+#                   install regression. Runs on main pushes, workflow_dispatch,
+#                   and v* tags.
+#   smoke       -- real inference against the pinned GGUF pair on llama-server
+#                  (workflow_dispatch + v* tags ONLY -- never plain main pushes).
+#                  This is Task 14's precondition gate: the release needs-chain
+#                  forces it green on the EXACT release tag SHA.
+#   release     -- GitHub Release with installer + portable zip (v* tags only;
+#                  needs BOTH jobs -- no release ships on red smoke).
+#
+# Artifacts are uploaded ONLY as the build-chain -> release job handoff (short
+# retention); Release assets remain the single distribution surface.
 on:
   push:
     branches: [main]
-  pull_request:
+    tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build-test:
+  build-chain:
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,8 +38,105 @@ jobs:
         with:
           dotnet-version: 10.x
 
-      - name: Build
-        run: dotnet build src/WinLocalASR.sln -c Debug
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER="0.1.0-dev"
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VER (ref=$GITHUB_REF)"
 
-      - name: Test
-        run: dotnet test src/WinLocalASR.sln
+      - name: Build (Release)
+        run: dotnet build src/WinLocalASR.sln -c Release
+
+      - name: Test (full suite, incl. Windows-only)
+        run: dotnet test src/WinLocalASR.sln -c Release --no-build
+
+      - name: Publish (self-contained single file)
+        run: dotnet publish src/WinLocalASR.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeSatelliteAssembliesInSingleFile=true -o staging/app
+
+      - name: Strip PDBs from staging
+        run: Remove-Item staging/app/*.pdb -ErrorAction SilentlyContinue
+
+      - name: Verify self-contained bundle (QA-)
+        run: ./tests/verify-selfcontained.ps1 -AppExe staging/app/WinLocalASR.App.exe
+
+      - name: e2e against publish output
+        run: ./tests/e2e.ps1 -ExePath staging/app/WinLocalASR.App.exe
+
+      - name: Verify pinned llama.cpp binaries
+        run: ./tests/verify-llama-binaries.ps1 -ManifestPath versions.json -WorkDir llama-bin
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer (ISCC)
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=${{ steps.ver.outputs.version }}" packaging/installer.iss'
+
+      - name: Build portable zip
+        run: Compress-Archive -Path staging/app/*, packaging/WinLocalASR.bat -DestinationPath "dist/WinLocalASR-v${{ steps.ver.outputs.version }}-portable-win-x64.zip"
+
+      - name: Silent install regression
+        run: ./tests/install-regression.ps1 -InstallerPath "dist/WinLocalASR-Setup-v${{ steps.ver.outputs.version }}-x64.exe"
+
+      - name: Upload release assets (job handoff)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: dist/*
+          retention-days: 14
+          if-no-files-found: error
+
+  smoke:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inference smoke (pinned GGUF pair on llama-server)
+        run: ./tests/inference-smoke.ps1 -ManifestPath versions.json -WorkDir smoke-work
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-chain, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Publish GitHub Release (prerelease)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: WinLocalASR ${{ github.ref_name }}
+          prerelease: true
+          fail_on_unmatched_files: true
+          body: |
+            Offline voice dictation for Windows 10+ (x64) - prerelease build.
+
+            ## Install
+
+            1. Download the `WinLocalASR-Setup-*-x64.exe` installer below.
+            2. The binary is not code-signed; SmartScreen may warn - click **More info -> Run anyway**.
+            3. First launch runs a guided setup that downloads the speech model (~2.5 GB; a mirror fallback covers China networks).
+            4. Grant microphone permission when prompted.
+
+            Portable alternative: the `WinLocalASR-*-portable-win-x64.zip` - extract anywhere and run `WinLocalASR.bat`.
+
+            Build source: `${{ github.sha }}` (workflow run ${{ github.run_id }}); the real-inference smoke job is green on this exact SHA.
+
+            Promoting out of prerelease happens after the reference test machine (Win11 x64) acceptance pass.
+          files: |
+            release-assets/WinLocalASR-Setup-*.exe
+            release-assets/WinLocalASR-*-portable-win-x64.zip

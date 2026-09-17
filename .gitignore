@@ -1,3 +1,7 @@
 bin/
 obj/
 *.user
+/staging/
+/dist/
+/llama-bin/
+/smoke-work/
