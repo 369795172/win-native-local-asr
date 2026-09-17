@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>WinLocalASR Settings</value>
+  </data>
+  <data name="Settings_HotkeyLabel" xml:space="preserve">
+    <value>Hotkey</value>
+  </data>
+  <data name="Settings_HotkeyHint" xml:space="preserve">
+    <value>Click the box, then press the combination. Esc cancels.</value>
+  </data>
+  <data name="Settings_HotkeyCaptureActive" xml:space="preserve">
+    <value>Press the key combination. Esc cancels.</value>
+  </data>
+  <data name="Settings_HotkeyCaptureCancelled" xml:space="preserve">
+    <value>Hotkey capture cancelled; the previous combination stays in effect.</value>
+  </data>
+  <data name="Settings_HotkeyNeedsModifier" xml:space="preserve">
+    <value>A hotkey needs at least one modifier (Ctrl, Alt, Shift, Win).</value>
+  </data>
+  <data name="Settings_HotkeyInvalidReset" xml:space="preserve">
+    <value>The saved hotkey is invalid; the default was restored.</value>
+  </data>
+  <data name="Settings_DeviceLabel" xml:space="preserve">
+    <value>Input device</value>
+  </data>
+  <data name="Settings_SystemDefaultDevice" xml:space="preserve">
+    <value>System default</value>
+  </data>
+  <data name="Settings_RefreshDevices" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Settings_ContextPromptLabel" xml:space="preserve">
+    <value>Hotwords</value>
+  </data>
+  <data name="Settings_ContextPromptPlaceholder" xml:space="preserve">
+    <value>Space or comma separated, e.g. WinLocalASR Qwen3 llama.cpp</value>
+  </data>
+  <data name="Settings_ContextPromptHint" xml:space="preserve">
+    <value>Biases recognition toward these terms; not a hard dictionary.</value>
+  </data>
+  <data name="Settings_LimitLabel" xml:space="preserve">
+    <value>Recording limit (seconds)</value>
+  </data>
+  <data name="Settings_LimitHint" xml:space="preserve">
+    <value>10 to 120 seconds; 120 is the maximum supported by the local engine.</value>
+  </data>
+  <data name="Settings_LimitClamped" xml:space="preserve">
+    <value>Recording limit must be 10-120 seconds; the value was adjusted.</value>
+  </data>
+  <data name="Settings_AutoStart" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="Settings_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Settings_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Settings_Applied" xml:space="preserve">
+    <value>Settings applied.</value>
+  </data>
+  <data name="Settings_ApplyFailed" xml:space="preserve">
+    <value>Could not apply settings</value>
+  </data>
+</root>

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinLocalASR.App", "WinLocal
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinLocalASR.Tests", "WinLocalASR.Tests\WinLocalASR.Tests.csproj", "{712D22A7-35BC-45DE-B10D-89D93B652C03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinLocalASR.Resources", "WinLocalASR.Resources\WinLocalASR.Resources.csproj", "{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{712D22A7-35BC-45DE-B10D-89D93B652C03}.Release|x64.Build.0 = Release|Any CPU
 		{712D22A7-35BC-45DE-B10D-89D93B652C03}.Release|x86.ActiveCfg = Release|Any CPU
 		{712D22A7-35BC-45DE-B10D-89D93B652C03}.Release|x86.Build.0 = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|x64.Build.0 = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|x64.ActiveCfg = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|x64.Build.0 = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F6D9B80-4CA6-4697-BA89-5C1AF6EB2973}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

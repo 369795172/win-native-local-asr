@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>WinLocalASR 设置</value>
+  </data>
+  <data name="Settings_HotkeyLabel" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="Settings_HotkeyHint" xml:space="preserve">
+    <value>点击输入框后按下组合键；按 Esc 取消。</value>
+  </data>
+  <data name="Settings_HotkeyCaptureActive" xml:space="preserve">
+    <value>请按下组合键；按 Esc 取消。</value>
+  </data>
+  <data name="Settings_HotkeyCaptureCancelled" xml:space="preserve">
+    <value>已取消快捷键捕获，保留原组合键。</value>
+  </data>
+  <data name="Settings_HotkeyNeedsModifier" xml:space="preserve">
+    <value>快捷键需至少包含一个修饰键（Ctrl、Alt、Shift、Win）。</value>
+  </data>
+  <data name="Settings_HotkeyInvalidReset" xml:space="preserve">
+    <value>已保存的快捷键无效，已恢复默认值。</value>
+  </data>
+  <data name="Settings_DeviceLabel" xml:space="preserve">
+    <value>输入设备</value>
+  </data>
+  <data name="Settings_SystemDefaultDevice" xml:space="preserve">
+    <value>系统默认</value>
+  </data>
+  <data name="Settings_RefreshDevices" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Settings_ContextPromptLabel" xml:space="preserve">
+    <value>热词</value>
+  </data>
+  <data name="Settings_ContextPromptPlaceholder" xml:space="preserve">
+    <value>空格或逗号分隔，例如：WinLocalASR Qwen3 llama.cpp</value>
+  </data>
+  <data name="Settings_ContextPromptHint" xml:space="preserve">
+    <value>会使识别偏向这些词，不是强制词典。</value>
+  </data>
+  <data name="Settings_LimitLabel" xml:space="preserve">
+    <value>录音上限（秒）</value>
+  </data>
+  <data name="Settings_LimitHint" xml:space="preserve">
+    <value>10 到 120 秒；120 秒为本地引擎支持的上限。</value>
+  </data>
+  <data name="Settings_LimitClamped" xml:space="preserve">
+    <value>录音上限须在 10-120 秒之间，已自动调整。</value>
+  </data>
+  <data name="Settings_AutoStart" xml:space="preserve">
+    <value>开机自启</value>
+  </data>
+  <data name="Settings_Apply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Settings_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Settings_Applied" xml:space="preserve">
+    <value>设置已应用。</value>
+  </data>
+  <data name="Settings_ApplyFailed" xml:space="preserve">
+    <value>无法应用设置</value>
+  </data>
+</root>

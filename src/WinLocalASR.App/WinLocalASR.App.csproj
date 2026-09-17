@@ -7,10 +7,12 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WinLocalASR.Core\WinLocalASR.Core.csproj" />
+    <ProjectReference Include="..\WinLocalASR.Resources\WinLocalASR.Resources.csproj" />
   </ItemGroup>
 
 </Project>

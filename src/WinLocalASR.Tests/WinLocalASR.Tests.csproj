@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WinLocalASR.Core\WinLocalASR.Core.csproj" />
+    <ProjectReference Include="..\WinLocalASR.Resources\WinLocalASR.Resources.csproj" />
   </ItemGroup>
 
 </Project>
