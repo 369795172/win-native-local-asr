@@ -29,6 +29,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $script:Results = New-Object System.Collections.Generic.List[string]
 $script:Degraded = $false
+# Every observed hud controlValue across ALL waits contributes to the coverage
+# assertion (the recording value is observed during the first toggle's wait, not the
+# post-stop poll -- relying on the post-stop poll alone races the ~ms transition).
+$script:HudObserved = @{}
 
 function Add-Result([string]$Name, [bool]$Pass, [string]$Detail) {
     $status = if ($Pass) { 'PASS' } else { 'FAIL' }
@@ -50,7 +54,9 @@ function Fail([string]$Message) {
 function Get-StatusSnapshot {
     # One GET /status; $null on any transport error (server degraded/unreachable).
     try {
-        return Invoke-RestMethod -Uri "http://localhost:$Port/status" -Method Get -TimeoutSec 3
+        $snapshot = Invoke-RestMethod -Uri "http://localhost:$Port/status" -Method Get -TimeoutSec 3
+        $script:HudObserved[$snapshot.hudControlValue] = $true
+        return $snapshot
     } catch {
         return $null
     }
@@ -197,12 +203,12 @@ try {
     # ---- 5. toggle OFF, run the transcribe cycle -------------------------------------
     Invoke-ControlEndpoint '/control/toggle' | Out-Null
 
-    # Continuous snapshot poll: collects observed hud controlValues (no per-state races ---
-    # every snapshot contributes to the observed set), stops at completed idle+transcript.
+    # Continuous snapshot poll: stops at completed idle+transcript. Hud coverage is
+    # accumulated across the WHOLE run via $script:HudObserved (see Get-StatusSnapshot)
+    # -- recording is legitimately observed during the first toggle's wait.
     # WALL-CLOCK deadline + 5 s heartbeat (a counter budget amplifies slow transport
     # timeouts past the job limit; the heartbeat makes a wedged state observable).
     $pollDeadline = [DateTime]::UtcNow.AddSeconds($TimeoutSec)
-    $hudObserved = @{}
     $final = $null
     $sawProcessing = $false
     $lastSnapshot = $null
@@ -211,7 +217,6 @@ try {
         $snapshot = Get-StatusSnapshot
         if ($null -ne $snapshot) {
             $lastSnapshot = $snapshot
-            $hudObserved[$snapshot.hudControlValue] = $true
             if ($snapshot.phase -eq 'processing') { $sawProcessing = $true }
             if ($snapshot.phase -eq 'idle' -and $snapshot.lastTranscript -ceq $PresetText) {
                 $final = $snapshot
@@ -274,10 +279,10 @@ try {
         "history=$($final.phaseHistory -join ',')"
     if (-not $historyOk) { Fail 'phaseHistory sequence assertion failed' }
 
-    $hudOk = ($hudObserved.ContainsKey('recording') -and $hudObserved.ContainsKey('processing') -and
-              ($hudObserved.ContainsKey('copied') -or $final.hudControlValue -eq 'copied'))
+    $hudOk = ($script:HudObserved.ContainsKey('recording') -and $script:HudObserved.ContainsKey('processing') -and
+              ($script:HudObserved.ContainsKey('copied') -or $final.hudControlValue -eq 'copied'))
     Add-Result 'hud controlValues covered recording/processing/copied' $hudOk `
-        "observed=$(($hudObserved.Keys | Sort-Object) -join ','),final=$($final.hudControlValue)"
+        "observed=$(($script:HudObserved.Keys | Sort-Object) -join ','),final=$($final.hudControlValue)"
     if (-not $hudOk) { Fail 'hud controlValue coverage assertion failed' }
 
     # ---- 9. graceful quit --------------------------------------------------------------
