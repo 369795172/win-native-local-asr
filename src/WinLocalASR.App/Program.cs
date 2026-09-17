@@ -1,3 +1,4 @@
+using WinLocalASR.Core.Control;
 using WinLocalASR.Core.Shell;
 
 namespace WinLocalASR.App;
@@ -27,6 +28,7 @@ internal static class Program
         {
             MutexFactory = new SystemMutexFactory(),
             ServiceGraphFactory = new DefaultAppServiceGraphFactory(log),
+            FakeServiceGraphFactory = new FakeServiceGraphFactory(),
             TrayShellFactory = trayFactory,
             SetupDialogFactory = new WinSetupDialogFactory(log),
             SettingsDialogFactory = new WinSettingsDialogFactory(() => trayFactory.Hotkeys),

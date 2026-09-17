@@ -1,11 +1,18 @@
+using WinLocalASR.Core.Control;
 using WinLocalASR.Core.State;
 
 namespace WinLocalASR.Core.Shell;
 
 /// <summary>
 /// The controller plus everything the shell polled from settings before constructing it.
+/// Dispatcher/FakeTranscription (Task 12) are optional additive members: existing graph
+/// factories keep the two-argument construction.
 /// </summary>
-public sealed record AppServiceGraph(AppController Controller, bool InitiallyConfigured);
+public sealed record AppServiceGraph(
+    AppController Controller,
+    bool InitiallyConfigured,
+    IDispatcher? Dispatcher = null,
+    FakeTranscriptionService? FakeTranscription = null);
 
 /// <summary>
 /// Builds the real object graph (SettingsStore → LlamaServerClient + AudioCaptureManager +
@@ -39,6 +46,10 @@ public sealed class AppBootstrapperDependencies
     public required IMutexFactory MutexFactory { get; init; }
 
     public required IAppServiceGraphFactory ServiceGraphFactory { get; init; }
+
+    /// <summary>Graph used when <c>--fake-configured</c> is passed (Task 12 CI mode);
+    /// null (the default for tests) means the flag falls back to the real graph with a warning.</summary>
+    public IAppServiceGraphFactory? FakeServiceGraphFactory { get; init; }
 
     public required ITrayShellFactory TrayShellFactory { get; init; }
 
@@ -78,8 +89,35 @@ public sealed class AppBootstrapper
             return 0; // contract: second launch exits quietly, code 0, no second tray
         }
 
-        AppServiceGraph graph = _dependencies.ServiceGraphFactory.Create();
+        AppServiceGraph graph = CreateServiceGraph();
         AppController controller = graph.Controller;
+        IDispatcher dispatcher = graph.Dispatcher ?? new SynchronizationContextDispatcher();
+
+        // Task 12: opt-in ControlServer — normal startup opens NO socket (plan hard rule).
+        ControlServer? controlServer = null;
+        if (Options.HasFlag(CommandLineOptions.EnableControlServerFlag))
+        {
+            int port = ControlServer.DefaultPort;
+            if (Options.TryGetValue(CommandLineOptions.ControlServerPortKey, out string portValue) &&
+                int.TryParse(portValue, out int parsedPort) && parsedPort is > 0 and <= 65535)
+            {
+                port = parsedPort;
+            }
+
+            controlServer = new ControlServer(new ControlServerOptions
+            {
+                Controller = controller,
+                Log = _dependencies.Log,
+                OpenSetup = () => OpenSetupDegrading(controller),
+                PresetFakeTranscript = graph.FakeTranscription is { } fake
+                    ? text => fake.PresetText = text
+                    : null,
+                Toggle = () => dispatcher.Post(controller.ToggleRecording),
+                Quit = () => dispatcher.Post(() => _ = ExitAsync(controller)),
+                Port = port,
+            });
+            controlServer.Start(); // port conflict degrades to a WARN inside
+        }
 
         if (!graph.InitiallyConfigured)
         {
@@ -110,6 +148,7 @@ public sealed class AppBootstrapper
         }
         finally
         {
+            controlServer?.Dispose(); // stop accepting test commands before teardown
             tray?.Dispose();
             try
             {
@@ -122,6 +161,39 @@ public sealed class AppBootstrapper
         }
 
         return 0;
+    }
+
+    private AppServiceGraph CreateServiceGraph()
+    {
+        if (Options.HasFlag(CommandLineOptions.FakeConfiguredFlag))
+        {
+            if (_dependencies.FakeServiceGraphFactory is { } fakeFactory)
+            {
+                return fakeFactory.Create();
+            }
+
+            _dependencies.Log.Warn(
+                "--fake-configured requested but no fake service graph is wired; using the real service graph");
+        }
+
+        return _dependencies.ServiceGraphFactory.Create();
+    }
+
+    /// <summary>The /control/quit path — exactly the tray Exit flow: real shutdown, then
+    /// message-loop stop (the finally block re-runs ShutdownAsync, the tested double-stop
+    /// pattern from the tray exit).</summary>
+    private async Task ExitAsync(AppController controller)
+    {
+        try
+        {
+            await controller.ShutdownAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _dependencies.Log.Warn($"engine shutdown failed: {ex.Message}");
+        }
+
+        _dependencies.MessageLoop.Stop();
     }
 
     private void OpenSetupDegrading(AppController controller)

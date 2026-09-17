@@ -12,6 +12,10 @@ public sealed class CommandLineOptions
     public const string EnableControlServerFlag = "enable-control-server";
     public const string FakeConfiguredFlag = "fake-configured";
 
+    /// <summary>Optional key/value override for the ControlServer port (Task 12); the
+    /// default stays 17846 and the flag alone never changes it.</summary>
+    public const string ControlServerPortKey = "control-server-port";
+
     private readonly HashSet<string> _flags = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
 

@@ -27,16 +27,20 @@ internal sealed class DefaultAppServiceGraphFactory : IAppServiceGraphFactory
     public AppServiceGraph Create()
     {
         SettingsStore settings = new();
+        SynchronizationContextDispatcher dispatcher = new();
         AppController controller = new(
             new AudioCaptureServiceAdapter(new AudioCaptureManager()),
             BuildTranscriptionService(),
             new ClipboardServiceAdapter(new ClipboardWriter()),
             new SettingsProviderAdapter(settings),
             new SystemSchedulingTimer(),
-            new SynchronizationContextDispatcher(),
+            dispatcher,
             new SystemClock());
 
-        return new AppServiceGraph(controller, settings.Load().Configured);
+        return new AppServiceGraph(
+            controller,
+            settings.Load().Configured,
+            Dispatcher: dispatcher);
     }
 
     private ITranscriptionService BuildTranscriptionService()
