@@ -1,4 +1,7 @@
-# WinLocalASR end-to-end driver (Task 12).
+# WinLocalASR end-to-end driver (Task 12; instrumentation hardened in Task 13 after
+# the first runner execution revealed a silent wedge: waits are now WALL-CLOCK
+# deadline-bounded with 5-10 s heartbeats, every control POST is logged, and app
+# stdout/stderr + shell.log tails are dumped on failure and teardown).
 #
 # Launches the app with --enable-control-server --fake-configured, drives a full
 # recording cycle through the REAL AppController via the ControlServer HTTP API,
@@ -47,18 +50,40 @@ function Fail([string]$Message) {
 function Get-StatusSnapshot {
     # One GET /status; $null on any transport error (server degraded/unreachable).
     try {
-        return Invoke-RestMethod -Uri "http://localhost:$Port/status" -Method Get -TimeoutSec 5
+        return Invoke-RestMethod -Uri "http://localhost:$Port/status" -Method Get -TimeoutSec 3
     } catch {
         return $null
     }
 }
 
 function Invoke-ControlEndpoint([string]$Path, [string]$Body = $null) {
+    Write-Host "e2e: POST $Path ..."
     if ($null -ne $Body) {
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
-        return Invoke-RestMethod -Uri "http://localhost:$Port$Path" -Method Post -Body $bytes -ContentType 'application/json' -TimeoutSec 15
+        $response = Invoke-RestMethod -Uri "http://localhost:$Port$Path" -Method Post -Body $bytes -ContentType 'application/json' -TimeoutSec 15
+    } else {
+        $response = Invoke-RestMethod -Uri "http://localhost:$Port$Path" -Method Post -TimeoutSec 15
     }
-    return Invoke-RestMethod -Uri "http://localhost:$Port$Path" -Method Post -TimeoutSec 15
+    Write-Host "e2e: POST $Path -> ok"
+    return $response
+}
+
+function Dump-AppLogs([string]$Note) {
+    # Diagnostics: the app's redirected stdout/stderr live in %TEMP%; without this
+    # a wedged app is invisible from the step log (first exercised on the runner).
+    Write-Host "e2e: --- app logs ($Note) ---"
+    foreach ($log in @($script:StdoutLog, $script:StderrLog)) {
+        if ($log -and (Test-Path $log)) {
+            Write-Host "e2e: [$log] (tail 40):"
+            Get-Content $log -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+        }
+    }
+    $shellLog = Join-Path $env:APPDATA 'WinLocalASR\shell.log'
+    if (Test-Path $shellLog) {
+        Write-Host "e2e: [$shellLog] (tail 40):"
+        Get-Content $shellLog -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+    }
+    Write-Host 'e2e: --- end app logs ---'
 }
 
 function Wait-For {
@@ -67,28 +92,41 @@ function Wait-For {
         [string]$Description,
         [ref]$CapturedSnapshot
     )
-    # Bounded poll: 250 ms interval, TimeoutSec budget. Every wait in this script goes
-    # through here --- the QA- contract (unreachable /status fails explicitly, never hangs).
-    $maxAttempts = [Math]::Max(1, [int]($TimeoutSec * 1000 / 250))
+    # Bounded WALL-CLOCK poll (250 ms interval, TimeoutSec budget): attempt-count
+    # budgets amplify slow transport failures (a 5 s timeout x 480 attempts outlives
+    # the job timeout), so the deadline is a clock, not a counter. A heartbeat every
+    # 10 s prints the last observed state so a wedged server/app is visible in the
+    # step log instead of 40 minutes of silence.
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSec)
     $lastErrorSeen = $false
-    for ($i = 0; $i -lt $maxAttempts; $i++) {
+    $lastSnapshot = $null
+    $lastHeartbeat = [DateTime]::MinValue
+    while ([DateTime]::UtcNow -lt $deadline) {
         $snapshot = Get-StatusSnapshot
         if ($null -eq $snapshot) {
             $lastErrorSeen = $true
         } else {
             if ($lastErrorSeen) { $lastErrorSeen = $false }
+            $lastSnapshot = $snapshot
             if ((& $Condition $snapshot) -eq $true) {
                 if ($null -ne $CapturedSnapshot) { $CapturedSnapshot.Value = $snapshot }
                 return $snapshot
             }
         }
+        if (((Get-Date).ToUniversalTime() - $lastHeartbeat).TotalSeconds -ge 10) {
+            $state = if ($null -ne $lastSnapshot) { "phase=$($lastSnapshot.phase) hud=$($lastSnapshot.hudControlValue)" } else { '/status unreachable' }
+            Write-Host ("e2e: still waiting ({0:n0}s elapsed): {1} [{2}]" -f `
+                ([DateTime]::UtcNow - ($deadline.AddSeconds(-$TimeoutSec))).TotalSeconds, $state, $Description)
+            $lastHeartbeat = (Get-Date).ToUniversalTime()
+        }
         Start-Sleep -Milliseconds 250
     }
+    Dump-AppLogs "Wait-For timeout: $Description"
     if ($lastErrorSeen) {
-        Fail ("control server did not become reachable on http://localhost:$Port/ within ${TimeoutSec}s ($Description). " +
+        Fail ("control server did not answer on http://localhost:$Port/ within ${TimeoutSec}s ($Description). " +
               'The server is either degraded (port conflict --- see shell.log) or the app failed to start.')
     }
-    Fail ("timed out after ${TimeoutSec}s waiting for: $Description")
+    Fail ("timed out after ${TimeoutSec}s waiting for: $Description (last phase=$($lastSnapshot.phase))")
 }
 
 function Test-OrderedSubsequence([object[]]$History, [object[]]$Expected) {
@@ -118,6 +156,8 @@ Write-Host "e2e: preset    = $PresetText"
 
 $stdoutLog = Join-Path ([System.IO.Path]::GetTempPath()) "winlocalasr-e2e-out-$PID.log"
 $stderrLog = Join-Path ([System.IO.Path]::GetTempPath()) "winlocalasr-e2e-err-$PID.log"
+$script:StdoutLog = $stdoutLog
+$script:StderrLog = $stderrLog
 $proc = Start-Process -FilePath $ExePath -ArgumentList @('--enable-control-server', '--fake-configured') `
     -PassThru -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
 
@@ -158,25 +198,38 @@ try {
 
     # Continuous snapshot poll: collects observed hud controlValues (no per-state races ---
     # every snapshot contributes to the observed set), stops at completed idle+transcript.
-    $maxAttempts = [Math]::Max(1, [int]($TimeoutSec * 1000 / 150))
+    # WALL-CLOCK deadline + 5 s heartbeat (a counter budget amplifies slow transport
+    # timeouts past the job limit; the heartbeat makes a wedged state observable).
+    $pollDeadline = [DateTime]::UtcNow.AddSeconds($TimeoutSec)
     $hudObserved = @{}
     $final = $null
     $sawProcessing = $false
-    for ($i = 0; $i -lt $maxAttempts; $i++) {
+    $lastSnapshot = $null
+    $lastHeartbeat = [DateTime]::MinValue
+    while ([DateTime]::UtcNow -lt $pollDeadline) {
         $snapshot = Get-StatusSnapshot
         if ($null -ne $snapshot) {
+            $lastSnapshot = $snapshot
             $hudObserved[$snapshot.hudControlValue] = $true
             if ($snapshot.phase -eq 'processing') { $sawProcessing = $true }
-            if ($snapshot.phase -eq 'idle' -and $snapshot.lastTranscript -eq $PresetText) {
+            if ($snapshot.phase -eq 'idle' -and $snapshot.lastTranscript -ceq $PresetText) {
                 $final = $snapshot
                 break
             }
+        }
+        if (((Get-Date).ToUniversalTime() - $lastHeartbeat).TotalSeconds -ge 5) {
+            $state = if ($null -ne $lastSnapshot) { "phase=$($lastSnapshot.phase) hud=$($lastSnapshot.hudControlValue) transcript=[$($lastSnapshot.lastTranscript)]" } else { '/status unreachable' }
+            Write-Host ("e2e: transcription poll ({0:n0}s elapsed): {1}" -f `
+                ([DateTime]::UtcNow - ($pollDeadline.AddSeconds(-$TimeoutSec))).TotalSeconds, $state)
+            $lastHeartbeat = (Get-Date).ToUniversalTime()
         }
         Start-Sleep -Milliseconds 150
     }
     if ($null -eq $final) {
         $last = Get-StatusSnapshot
-        Fail ("transcription cycle did not complete within ${TimeoutSec}s (last phase=$($last.phase), " +
+        $lastState = if ($null -ne $last) { $last.phase } else { 'unreachable' }
+        Dump-AppLogs 'transcription cycle timeout'
+        Fail ("transcription cycle did not complete within ${TimeoutSec}s (last phase=$lastState, " +
               "lastTranscript=$($last.lastTranscript))")
     }
 
@@ -235,6 +288,9 @@ try {
 } finally {
     if ($null -ne $proc -and -not $proc.HasExited) {
         Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    }
+    if ($null -ne $proc) {
+        Dump-AppLogs "teardown (app exited=$($proc.HasExited))"
     }
 }
 
