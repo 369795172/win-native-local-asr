@@ -1,0 +1,30 @@
+{
+  "llamaCpp": {
+    "tag": "b10964",
+    "assetName": "llama-b10964-bin-win-cpu-x64.zip",
+    "sha256": "917f39c076402c421224824607397af20f53625a60defc20e8dd22446bf4c5d7",
+    "sha256Policy": "official"
+  },
+  "models": {
+    "main": {
+      "repo": "ggml-org/Qwen3-ASR-1.7B-GGUF",
+      "file": "Qwen3-ASR-1.7B-Q8_0.gguf",
+      "revision": "main",
+      "sha256": "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+      "sizeBytes": 2165034944
+    },
+    "mmproj": {
+      "repo": "ggml-org/Qwen3-ASR-1.7B-GGUF",
+      "file": "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+      "revision": "main",
+      "sha256": "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+      "sizeBytes": 355709344
+    }
+  },
+  "urls": {
+    "huggingface": "https://huggingface.co",
+    "hfMirror": "https://hf-mirror.com",
+    "github": "https://github.com",
+    "ghProxyPrefix": "https://ghproxy.cn/"
+  }
+}

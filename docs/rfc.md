@@ -59,6 +59,12 @@ Chinese confirms the same artifact prefix, verbatim: `"language Chinese<asr_text
 - `GET /health` → `200 {"status":"ok"}` — the ready-poll target.
 - **`/shutdown` does not exist** (GET and POST both 404). `Stop()` therefore attempts graceful shutdown, then kills the process after 2 s (`taskkill` on Windows; SIGTERM elsewhere, verified clean).
 
+### Windows binary pin (2026-09-17, Task 5)
+
+- **Tag**: `b10964` — the same build number the spike validated (`b10964-b29c606e2`), published as an official llama.cpp pre-release. Pinned in `versions.json` (`llamaCpp.tag`).
+- **Asset**: `llama-b10964-bin-win-cpu-x64.zip` (18,427,629 bytes), confirmed to contain `llama-server.exe`. Runtime dependency DLLs shipped in the zip: `llama-server-impl.dll`, `llama.dll`, `llama-common.dll`, `mtmd.dll`, `ggml.dll`, `ggml-base.dll`, CPU-variant dispatch DLLs (`ggml-cpu-alderlake/cannonlake/cascadelake/cooperlake/haswell/icelake/ivybridge/piledriver/sandybridge/sapphirerapids/skylakex/sse42/x64/zen4.dll`), `ggml-rpc.dll`, `libomp.dll` (+ `LICENSE-LLVM-OpenMP`). The downloader must extract the whole zip (the CPU dispatch DLLs are selected at load time).
+- **SHA256 policy**: `official` — GitHub's release-asset digest (`917f39c076402c421224824607397af20f53625a60defc20e8dd22446bf4c5d7`) was independently verified against a local download (byte-exact). Not TOFU. Recorded in `versions.json` (`llamaCpp.sha256` / `sha256Policy`).
+
 ### Validation context
 
 - Quality gate PASS on the pinned-equivalent build: exact EN+ZH transcripts across 1.4 s–142.5 s duration tiers; 87.4 s audio transcribed in 4.4 s and 142.5 s in 7.8 s (Mac Metal). Windows CPU AVX2 will be slower but retains ~2 orders of magnitude headroom against the 10 s → <10 s soft target.
